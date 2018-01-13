@@ -115,6 +115,42 @@ regressor.fit(X_train, y_train, epochs = 100, batch_size = 32)
 
 
 
+# =============================================================================
+# Model weights are saved to HDF5 format.(grid format that is ideal for storing multi-dimensional arrays of numbers.)
+# HDF5 lets you store huge amounts of numerical data, and easily manipulate that data from NumPy.
+# 
+# The model structure can be described and saved using two different formats: JSON and YAML.
+# =============================================================================
+from keras.models import model_from_json
+
+# serialize model to JSON
+model_json = regressor.to_json()
+with open("model.json", "w") as json_file:
+    json_file.write(model_json)
+# serialize weights to HDF5
+regressor.save_weights("model.h5")
+print("Saved model to disk")
+ 
+# Load the model...
+ 
+# load json and create model
+json_file = open('model.json', 'r')
+loaded_model_json = json_file.read()
+json_file.close()
+
+loaded_model = model_from_json(loaded_model_json)
+# load weights into new model
+loaded_model.load_weights("model.h5")
+print("Loaded model from disk")
+
+
+# make predictions...
+loaded_model.compile(optimizer = 'adam', loss = 'mean_squared_error')
+
+
+# in part 3 use loaded model:
+
+
 
 # =============================================================================
 # # Part 3 - Making the predictions and visualising the results
@@ -129,7 +165,7 @@ real_stock_price = dataset_test.iloc[:, 1:2].values
 # to predict price at t+1, we need 60 prev prices
 # in order to get pst 60 prices we eed both training and test set
 
-# dataset_total contains training and test sets. axis = 0 vertical concat
+# dataset_total now contains training and test sets. axis = 0 vertical concat
 dataset_total = pd.concat((dataset_train['Open'], dataset_test['Open']), axis = 0)
 # inputs start at: first financial day of jan 2017 - 60 financial days, ...
 # (total - test = currentToPredictIndex. currentToPredictIndex-60 : up to last value)
@@ -156,7 +192,9 @@ X_test = np.array(X_test)
 X_test = np.reshape(X_test, (X_test.shape[0], X_test.shape[1], 1))
 
 
-predicted_stock_price = regressor.predict(X_test)
+# USE LOADED MODEL
+#predicted_stock_price = regressor.predict(X_test)
+predicted_stock_price = loaded_model.predict(X_test)
 # obtain actual values to disply
 predicted_stock_price = sc.inverse_transform(predicted_stock_price)
 
